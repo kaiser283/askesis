@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ledger — Personal Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><h1 id="greet">Ledger</h1><div class="sub" id="dateline"></div></div>
+    <div style="display:flex;gap:8px"><button class="btn" id="settingsBtn">Settings</button></div>
+  </header>
+
+  <div id="celebrateSlot"></div>
+
+  <div class="grid" id="statGrid"></div>
+
+  <div class="cols2">
+    <div>
+      <div class="panel">
+        <div class="ph"><h2>Habits — This Week</h2></div>
+        <div class="pb">
+          <div class="habit-table"><table id="habitTable"></table></div>
+          <div class="addrow"><input type="text" id="newHabit" placeholder="New habit name…" maxlength="30"><button class="btn primary" id="addHabitBtn">Add</button></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><h2>Analytics — Habit Completion, Last 7 Days</h2></div>
+        <div class="pb chart-wrap"><svg id="chart" width="100%" height="140" viewBox="0 0 640 140" preserveAspectRatio="none"></svg></div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><h2>Calendar</h2><span class="mono mut" id="calLabel"></span></div>
+        <div class="pb"><div class="cal" id="cal"></div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="ph"><h2>To‑Do — Today</h2><span class="mono mut" id="todoCount"></span></div>
+        <div class="pb">
+          <div id="todoList"></div>
+          <div class="addrow"><input type="text" id="newTodo" placeholder="Add a task…"><button class="btn primary" id="addTodoBtn">Add</button></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><h2>Mood</h2></div>
+        <div class="pb"><div class="moodrow" id="moodRow"></div></div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><h2>Sleep</h2></div>
+        <div class="pb"><div class="sleeprow">
+          <input type="number" id="sleepInput" step="0.5" min="0" max="16" placeholder="hrs" style="max-width:80px">
+          <button class="btn" id="sleepSave">Save</button>
+          <span class="mut mono" id="sleepLast"></span>
+        </div></div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><h2>Top Habits</h2></div>
+        <div class="pb" id="topHabits"></div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><h2>Quote of the Day</h2></div>
+        <div class="pb"><div class="quote" id="quoteBox"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3>Settings</h3>
+    <p class="mut" style="font-size:12px">Habits are capped at 15. Reset clears all local data on this device.</p>
+    <div class="row"><button class="btn" id="exportBtn" style="flex:1">Export data (.json)</button></div>
+    <div class="row"><button class="btn" id="resetBtn" style="flex:1;border-color:var(--bad);color:var(--bad)">Reset all data</button><button class="btn" id="closeModal" style="flex:1">Close</button></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
