@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0c">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
 <title>Ledger — Personal Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -27,11 +30,6 @@
           <div class="habit-table"><table id="habitTable"></table></div>
           <div class="addrow"><input type="text" id="newHabit" placeholder="New habit name…" maxlength="30"><button class="btn primary" id="addHabitBtn">Add</button></div>
         </div>
-      </div>
-
-      <div class="panel">
-        <div class="ph"><h2>Analytics — Habit Completion, Last 7 Days</h2></div>
-        <div class="pb chart-wrap"><svg id="chart" width="100%" height="140" viewBox="0 0 640 140" preserveAspectRatio="none"></svg></div>
       </div>
 
       <div class="panel">
@@ -72,6 +70,32 @@
         <div class="ph"><h2>Quote of the Day</h2></div>
         <div class="pb"><div class="quote" id="quoteBox"></div></div>
       </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><h2>Analytics</h2></div>
+    <div class="pb">
+      <div class="section-label">Habits</div>
+      <div class="chart-grid-2">
+        <div><div class="mut" style="font-size:11.5px;margin-bottom:5px">Weekly Habit Progress</div><div class="chart-wrap" id="chartHabitWeek"></div></div>
+        <div><div class="mut" style="font-size:11.5px;margin-bottom:5px">Monthly Habit Progress</div><div class="chart-wrap" id="chartHabitMonth"></div></div>
+      </div>
+      <div style="margin-top:12px"><div class="mut" style="font-size:11.5px;margin-bottom:5px">Yearly Habit Progress</div><div class="chart-wrap" id="chartHabitYear"></div></div>
+
+      <div class="section-label">To‑Do</div>
+      <div class="chart-grid-2">
+        <div><div class="mut" style="font-size:11.5px;margin-bottom:5px">Weekly To‑Do Progress</div><div class="chart-wrap" id="chartTodoWeek"></div></div>
+        <div><div class="mut" style="font-size:11.5px;margin-bottom:5px">Monthly To‑Do Progress</div><div class="chart-wrap" id="chartTodoMonth"></div></div>
+      </div>
+      <div style="margin-top:12px"><div class="mut" style="font-size:11.5px;margin-bottom:5px">Yearly To‑Do Progress</div><div class="chart-wrap" id="chartTodoYear"></div></div>
+
+      <div class="section-label">Sleep</div>
+      <div class="chart-grid-2">
+        <div><div class="mut" style="font-size:11.5px;margin-bottom:5px">Weekly Sleep</div><div class="chart-wrap" id="chartSleepWeek"></div></div>
+        <div><div class="mut" style="font-size:11.5px;margin-bottom:5px">Monthly Sleep</div><div class="chart-wrap" id="chartSleepMonth"></div></div>
+      </div>
+      <div style="margin-top:12px"><div class="mut" style="font-size:11.5px;margin-bottom:5px">Yearly Sleep</div><div class="chart-wrap" id="chartSleepYear"></div></div>
     </div>
   </div>
 </div>

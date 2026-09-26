@@ -114,20 +114,85 @@ function renderTop(){
   $('#topHabits').innerHTML=rows.map(r=>`<div class="toprow"><span class="name">${r.name}</span><span class="meta">${r.pct}% · ${r.cur}d streak · ${r.total} total</span></div>`).join('');
 }
 
-function renderChart(){
-  const w=640,h=140,pad=20;
-  const pts=WEEK.map(d=>{
-    const ds=dstr(d);
-    if(db.habits.length===0) return 0;
-    const done=db.habits.filter(hb=>habitDone(hb.id,ds)).length;
-    return Math.round(done/db.habits.length*100);
+function daysInMonth(y,m){return new Date(y,m+1,0).getDate();}
+const earliestHabitDate = ()=> db.habits.length ? db.habits.reduce((m,h)=>h.createdAt<m?h.createdAt:m, db.habits[0].createdAt) : null;
+
+function habitPctForDate(ds,d){
+  const eh=earliestHabitDate();
+  if(!eh || ds<eh || d>today) return null;
+  return Math.round(db.habits.filter(h=>habitDone(h.id,ds)).length/db.habits.length*100);
+}
+function todoPctForDate(ds,d){
+  if(d>today) return null;
+  const list=db.todos[ds];
+  if(!list||list.length===0) return null;
+  return Math.round(list.filter(t=>t.done).length/list.length*100);
+}
+function sleepForDate(ds,d){
+  if(d>today) return null;
+  return db.sleep[ds]!==undefined?db.sleep[ds]:null;
+}
+function monthAvg(fn,y,m){
+  let sum=0,count=0;
+  for(let day=1;day<=daysInMonth(y,m);day++){
+    const d=new Date(y,m,day); if(d>today) break;
+    const v=fn(dstr(d),d);
+    if(v!==null){sum+=v;count++;}
+  }
+  return count?Math.round((sum/count)*10)/10:null;
+}
+
+function linePath(points,w,h,pad,minY,maxY){
+  const n=points.length; const stepX=n>1?(w-2*pad)/(n-1):0;
+  let d='',dots='',started=false;
+  points.forEach((v,i)=>{
+    const x=pad+i*stepX;
+    if(v===null||v===undefined){started=false;return;}
+    const y=h-pad-((v-minY)/(maxY-minY||1))*(h-2*pad);
+    d+=(started?'L':'M')+x.toFixed(1)+','+y.toFixed(1)+' ';
+    dots+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="#c9a86a"/>`;
+    started=true;
   });
-  const stepX=(w-2*pad)/6;
-  const coords=pts.map((p,i)=>[pad+i*stepX, h-pad-(p/100)*(h-2*pad)]);
-  const path=coords.map((c,i)=>(i===0?'M':'L')+c[0].toFixed(1)+','+c[1].toFixed(1)).join(' ');
-  const dots=coords.map(c=>`<circle cx="${c[0]}" cy="${c[1]}" r="2.6" fill="#c9a86a"/>`).join('');
-  const gridlines=[0,25,50,75,100].map(v=>{const y=h-pad-(v/100)*(h-2*pad);return `<line x1="${pad}" x2="${w-pad}" y1="${y}" y2="${y}" stroke="#1e1e21" stroke-width="1"/>`}).join('');
-  $('#chart').innerHTML=gridlines+`<path d="${path}" fill="none" stroke="#c9a86a" stroke-width="1.6"/>`+dots;
+  return {d,dots};
+}
+function renderLineChart(id,points,opts={}){
+  const el=$('#'+id);
+  const hasData=points.some(v=>v!==null&&v!==undefined);
+  if(!hasData){ el.innerHTML=`<div class="empty">${opts.emptyText||'No data yet.'}</div>`; return; }
+  const w=380,h=100,pad=14;
+  const real=points.filter(v=>v!==null&&v!==undefined);
+  const maxY=opts.maxY??Math.max(...real,1);
+  const minY=opts.minY??0;
+  const {d,dots}=linePath(points,w,h,pad,minY,maxY);
+  const gl=[0,.5,1].map(f=>{const y=h-pad-f*(h-2*pad);return `<line x1="${pad}" x2="${w-pad}" y1="${y}" y2="${y}" stroke="#1e1e21" stroke-width="1"/>`}).join('');
+  el.innerHTML=`<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${gl}<path d="${d}" fill="none" stroke="#c9a86a" stroke-width="1.5"/>${dots}</svg>`
+    +(opts.foot?`<div class="chart-foot"><span>${opts.foot[0]}</span><span>${opts.foot[1]}</span></div>`:'');
+}
+
+const MONTH_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function renderAnalytics(){
+  const y=today.getFullYear(), m=today.getMonth();
+  const dim=daysInMonth(y,m);
+  const monthDates=Array.from({length:dim},(_,i)=>new Date(y,m,i+1));
+  const monthDS=monthDates.map(dstr);
+  const yearMonths=Array.from({length:12},(_,i)=>i);
+
+  // Habits
+  renderLineChart('chartHabitWeek', WEEK.map(d=>habitPctForDate(dstr(d),d)), {emptyText:'No habits yet — add one to see weekly progress.', foot:['Mon','Sun']});
+  renderLineChart('chartHabitMonth', monthDates.map(d=>habitPctForDate(dstr(d),d)), {emptyText:'Not enough habit data this month yet.', foot:['1',String(dim)]});
+  renderLineChart('chartHabitYear', yearMonths.map(mo=>monthAvg(habitPctForDate,y,mo)), {emptyText:'Not enough habit data this year yet.', foot:[MONTH_NAMES[0],MONTH_NAMES[11]]});
+
+  // To-Do
+  renderLineChart('chartTodoWeek', WEEK.map(d=>todoPctForDate(dstr(d),d)), {emptyText:'No tasks logged this week yet.', foot:['Mon','Sun']});
+  renderLineChart('chartTodoMonth', monthDates.map(d=>todoPctForDate(dstr(d),d)), {emptyText:'No tasks logged this month yet.', foot:['1',String(dim)]});
+  renderLineChart('chartTodoYear', yearMonths.map(mo=>monthAvg(todoPctForDate,y,mo)), {emptyText:'No tasks logged this year yet.', foot:[MONTH_NAMES[0],MONTH_NAMES[11]]});
+
+  // Sleep
+  const sleepMax=Math.max(10, ...Object.values(db.sleep), 1);
+  renderLineChart('chartSleepWeek', WEEK.map(d=>sleepForDate(dstr(d),d)), {emptyText:'No sleep data yet — log your sleep to see trends.', minY:0, maxY:sleepMax, foot:['Mon','Sun']});
+  renderLineChart('chartSleepMonth', monthDates.map(d=>sleepForDate(dstr(d),d)), {emptyText:'No sleep data logged this month yet.', minY:0, maxY:sleepMax, foot:['1',String(dim)]});
+  renderLineChart('chartSleepYear', yearMonths.map(mo=>monthAvg(sleepForDate,y,mo)), {emptyText:'No sleep data logged this year yet.', minY:0, maxY:sleepMax, foot:[MONTH_NAMES[0],MONTH_NAMES[11]]});
 }
 
 function renderCal(){
@@ -150,7 +215,7 @@ function renderAll(){
   const hr=today.getHours();
   $('#greet').textContent = hr<12?'Good morning':hr<18?'Good afternoon':'Good evening';
   $('#dateline').textContent = today.toLocaleDateString('default',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-  renderStats(); renderHabitTable(); renderTodos(); renderMood(); renderSleep(); renderQuote(); renderTop(); renderChart(); renderCal();
+  renderStats(); renderHabitTable(); renderTodos(); renderMood(); renderSleep(); renderQuote(); renderTop(); renderAnalytics(); renderCal();
 }
 
 // events
@@ -188,3 +253,6 @@ $('#exportBtn').onclick=()=>{
 };
 
 renderAll();
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+}

@@ -1,49 +1,68 @@
 # Ledger — Personal Habit & Productivity Dashboard
 
-A dark, dense, spreadsheet-style dashboard for tracking habits, tasks, mood and sleep.
-No build step, no backend, no account — all data lives in your browser's localStorage.
+A dark, dense, spreadsheet-style dashboard for tracking habits, tasks, mood, sleep,
+and 9 analytics graphs. No backend, no build step — data lives in your browser.
 
-## Run it locally
+This version is a **PWA (Progressive Web App)**: once hosted on a real URL (see
+below), it can be installed as an app icon on both phone and desktop. It is NOT
+an .apk — see "About APKs" below for why, and how to get one if you still want it.
 
-Just open `index.html` in any modern browser. That's it — no npm install required.
+## Run it locally (quickest way to try it)
 
-Or, for a local server (recommended if you plan to extend it):
-```
-npx serve .
-```
-then visit the printed localhost URL.
+Just open `index.html` directly in a browser. Habit tracking, tasks, mood, sleep,
+analytics — all work immediately via localStorage.
 
-## What's included
+The "install as an app" part (below) needs a real server — opening the file
+directly (`file://...`) won't trigger the install prompt.
 
-- **Habits** — add up to 15, track daily completion in a weekly spreadsheet grid,
-  automatic current/longest streak and completion % per habit.
-- **To-Do list** — add/complete/delete tasks, scoped to today's date, persists across
-  refreshes.
-- **Mood** — one-tap 5-point daily mood log.
-- **Sleep** — single "hours slept" field per day.
-- **Quote of the day** — deterministic pick from a set of original quotes, same all day.
-- **Analytics** — 7-day line chart of overall habit completion %.
-- **Calendar** — current month, marks any day with at least one habit completed.
-- **Top habits** — ranked by real completion percentage.
-- **Settings** — export all data as JSON, or reset everything (with confirmation).
+## Install it as an app (phone + PC)
+
+Browsers only offer to "install" a PWA when it's served over HTTPS (or localhost).
+The easiest free way to get that:
+
+1. Push these files to a GitHub repository.
+2. In the repo, go to **Settings → Pages**, set the source to your main branch, save.
+   GitHub gives you a URL like `https://yourname.github.io/reponame/`.
+3. Open that URL:
+   - **On your phone** (Chrome/Safari): open the menu → "Add to Home Screen" /
+     "Install app". It now behaves like a native app icon.
+   - **On your PC** (Chrome/Edge): click the install icon (⊕) in the address bar,
+     or menu → "Install Ledger…". It opens in its own window, pinned to your
+     taskbar/dock, works offline.
+
+No app store, no signing, no APK needed for this — same app, same data model,
+on both platforms, from one set of files.
+
+## About APKs
+
+An `.apk` is a package format specific to Android — it cannot run on a PC.
+There is no single file that installs on both a phone and a computer; that's
+exactly the problem a PWA (above) solves instead.
+
+If you specifically want a real, installable Android `.apk` (e.g. to sideload
+outside a browser, or eventually list on the Play Store), the standard free
+path is:
+
+1. Host this project somewhere public (GitHub Pages, as above).
+2. Go to **pwabuilder.com**, paste in your hosted URL.
+3. It reads the `manifest.json` already included here and generates a signed
+   `.apk` (or `.aab` for the Play Store) for you to download — no Android
+   Studio required for a basic build.
+
+I can't generate that `.apk` file myself in this chat (it requires the live
+hosted URL and Android build tooling I don't have access to here), but once
+you've hosted the site, that step takes a few minutes.
 
 ## Files
 
-- `index.html` — markup
-- `styles.css` — all styling (CSS variables at the top control the palette)
-- `app.js` — state, rendering, and all interaction logic (vanilla JS, no framework)
+- `index.html`, `styles.css`, `app.js` — the app itself
+- `manifest.json` — PWA metadata (name, icons, colors) used by "Add to Home Screen"
+  and by PWABuilder to generate an APK
+- `sw.js` — service worker, enables offline use once installed
+- `icons/` — app icons (192px, 512px)
 
 ## Data
 
-Everything is stored under a single localStorage key (`ledger_v1`) as one JSON object:
-`{ habits, logs, todos, moods, sleep }`. Clearing your browser's site data for this
-page will erase it — use Settings → Export to back it up first.
-
-## Notes on scope
-
-This is a lean first build: one shared weekly habit-grid view (rather than separate
-daily/weekly/monthly tabs), and one combined analytics chart (rather than
-week/month/year toggles for habits/todos/sleep/mood separately). The data model
-already supports all of that — ask and it can be extended, including a full
-React + TypeScript + Tailwind rewrite if you'd prefer that stack for further
-development.
+Stored under the localStorage key `ledger_v1` as one JSON object:
+`{ habits, logs, todos, moods, sleep }`. Use Settings → Export inside the app
+to back it up as JSON before clearing browser data.
