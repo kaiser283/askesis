@@ -15,7 +15,7 @@
 <div class="wrap">
   <header>
     <div><h1 id="greet">Ledger</h1><div class="sub" id="dateline"></div></div>
-    <div style="display:flex;gap:8px"><button class="btn" id="settingsBtn">Settings</button></div>
+    <div style="display:flex;gap:8px"><button class="btn" id="warcNavBtn">❄ Winter Arc</button><button class="btn" id="settingsBtn">Settings</button></div>
   </header>
 
   <div id="celebrateSlot"></div>
@@ -96,6 +96,23 @@
         <div><div class="mut" style="font-size:11.5px;margin-bottom:5px">Monthly Sleep</div><div class="chart-wrap" id="chartSleepMonth"></div></div>
       </div>
       <div style="margin-top:12px"><div class="mut" style="font-size:11.5px;margin-bottom:5px">Yearly Sleep</div><div class="chart-wrap" id="chartSleepYear"></div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="winterArc">
+    <div class="ph"><h2>❄ Winter Arc — Oct 1 – Dec 29, 2026</h2><span class="mono mut" id="warcDay"></span></div>
+    <div class="pb">
+      <div class="mut" id="warcDate" style="margin-bottom:10px;font-size:12px"></div>
+      <div id="warcComplete"></div>
+      <div class="grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat"><div class="l">Completion</div><div class="v mono" id="warcPct"></div></div>
+        <div class="stat"><div class="l">Days Done</div><div class="v mono" id="warcCount"></div></div>
+        <div class="stat"><div class="l">Current Streak</div><div class="v mono" id="warcCur"></div></div>
+        <div class="stat"><div class="l">Longest Streak</div><div class="v mono" id="warcBest"></div></div>
+      </div>
+      <div class="warc-bar"><div class="warc-bar-fill" id="warcBarFill" style="width:0%"></div></div>
+      <div id="warcMilestones" style="margin-bottom:8px"></div>
+      <div id="warcGrid"></div>
     </div>
   </div>
 </div>

@@ -4,6 +4,7 @@ const pad=n=>String(n).padStart(2,'0');
 const dstr=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const today=new Date(); const TODAY=dstr(today);
 let db=JSON.parse(localStorage.getItem(KEY)||'null')||{habits:[],logs:{},todos:{},moods:{},sleep:{}};
+db.winterArc = db.winterArc || {};
 function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}}
 
 function weekDates(offset=0){
@@ -195,6 +196,54 @@ function renderAnalytics(){
   renderLineChart('chartSleepYear', yearMonths.map(mo=>monthAvg(sleepForDate,y,mo)), {emptyText:'No sleep data logged this year yet.', minY:0, maxY:sleepMax, foot:[MONTH_NAMES[0],MONTH_NAMES[11]]});
 }
 
+const WARC_START=new Date(2026,9,1);
+const WARC_DATES=Array.from({length:90},(_,i)=>{const d=new Date(WARC_START);d.setDate(WARC_START.getDate()+i);return d;});
+const WARC_END=WARC_DATES[89];
+const WARC_MILESTONES=[1,30,45,60,75,90];
+function toggleWarc(ds){
+  const cur=db.winterArc[ds];
+  if(cur==='done') db.winterArc[ds]='missed';
+  else if(cur==='missed') delete db.winterArc[ds];
+  else db.winterArc[ds]='done';
+  save(); renderAll();
+}
+function warcStats(){
+  let completed=0,longest=0,run=0;
+  WARC_DATES.forEach(d=>{ const st=db.winterArc[dstr(d)]; if(st==='done'){completed++;run++;longest=Math.max(longest,run);} else run=0; });
+  let refIdx;
+  if(today<WARC_START) refIdx=-1; else if(today>WARC_END) refIdx=89; else refIdx=Math.floor((today-WARC_START)/86400000);
+  let cur=0;
+  for(let i=refIdx;i>=0;i--){ if(db.winterArc[dstr(WARC_DATES[i])]==='done') cur++; else break; }
+  return {completed,longest,cur,refIdx};
+}
+function renderWinterArc(){
+  const s=warcStats();
+  const dayNum=s.refIdx>=0?Math.min(s.refIdx+1,90):0;
+  $('#warcDay').textContent=dayNum?`Day ${dayNum} / 90`:'Starts Oct 1, 2026';
+  $('#warcDate').textContent=today.toLocaleDateString('default',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const pct=Math.round(s.completed/90*100);
+  $('#warcPct').textContent=pct+'%';
+  $('#warcCount').textContent=`${s.completed} / 90`;
+  $('#warcCur').textContent=s.cur+'d';
+  $('#warcBest').textContent=s.longest+'d';
+  $('#warcBarFill').style.width=pct+'%';
+  $('#warcMilestones').innerHTML=WARC_MILESTONES.map(m=>{
+    const reached=db.winterArc[dstr(WARC_DATES[m-1])]==='done';
+    return `<span class="ms-chip ${reached?'reached':''}">Day ${m}${reached?' ✓':''}</span>`;
+  }).join('');
+  const day90done=db.winterArc[dstr(WARC_DATES[89])]==='done';
+  $('#warcComplete').innerHTML=day90done?`<div class="celebrate" style="text-align:center;margin-bottom:12px"><div style="font-size:15px;font-weight:600">❄ Winter Arc Complete</div><div class="mut" style="margin-top:4px">${s.completed}/90 days completed · longest streak ${s.longest}d</div></div>`:'';
+  const groups=[{label:'October 1–31',start:0,end:31},{label:'November 1–30',start:31,end:61},{label:'December 1–29',start:61,end:90}];
+  $('#warcGrid').innerHTML=groups.map(g=>{
+    let cells='';
+    for(let i=g.start;i<g.end;i++){
+      const d=WARC_DATES[i],ds=dstr(d),st=db.winterArc[ds],isToday=ds===TODAY;
+      cells+=`<span class="warc-cell ${st==='done'?'done':''} ${st==='missed'?'missed':''} ${isToday?'today':''}" data-warc="${ds}" title="${d.toLocaleDateString('default',{month:'short',day:'numeric'})}">${d.getDate()}</span>`;
+    }
+    return `<div class="mut" style="font-size:11px;margin:10px 0 5px">${g.label}</div><div class="warc-grid">${cells}</div>`;
+  }).join('');
+}
+
 function renderCal(){
   const m=today.getMonth(),y=today.getFullYear();
   $('#calLabel').textContent=today.toLocaleString('default',{month:'long',year:'numeric'});
@@ -215,7 +264,7 @@ function renderAll(){
   const hr=today.getHours();
   $('#greet').textContent = hr<12?'Good morning':hr<18?'Good afternoon':'Good evening';
   $('#dateline').textContent = today.toLocaleDateString('default',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-  renderStats(); renderHabitTable(); renderTodos(); renderMood(); renderSleep(); renderQuote(); renderTop(); renderAnalytics(); renderCal();
+  renderStats(); renderHabitTable(); renderTodos(); renderMood(); renderSleep(); renderQuote(); renderTop(); renderAnalytics(); renderCal(); renderWinterArc();
 }
 
 // events
@@ -225,7 +274,9 @@ document.body.addEventListener('click',e=>{
   const chk=e.target.closest('[data-tid]'); if(chk){ const t=(db.todos[TODAY]||[]).find(x=>x.id===chk.dataset.tid); if(t){t.done=!t.done; save(); renderAll();} return;}
   const tdel=e.target.closest('[data-tdel]'); if(tdel){ db.todos[TODAY]=(db.todos[TODAY]||[]).filter(x=>x.id!==tdel.dataset.tdel); save(); renderAll(); return;}
   const mood=e.target.closest('[data-mood]'); if(mood){ db.moods[TODAY]=parseInt(mood.dataset.mood); save(); renderAll(); return;}
+  const warc=e.target.closest('[data-warc]'); if(warc){ toggleWarc(warc.dataset.warc); return;}
 });
+$('#warcNavBtn').onclick=()=>$('#winterArc').scrollIntoView({behavior:'smooth',block:'start'});
 $('#addHabitBtn').onclick=()=>{
   const inp=$('#newHabit'); const name=inp.value.trim();
   if(!name) return;
@@ -246,7 +297,7 @@ $('#sleepSave').onclick=()=>{
 };
 $('#settingsBtn').onclick=()=>$('#modalBg').style.display='flex';
 $('#closeModal').onclick=()=>$('#modalBg').style.display='none';
-$('#resetBtn').onclick=()=>{ if(confirm('This will permanently erase all habits, tasks, mood and sleep data on this device. Continue?')){ db={habits:[],logs:{},todos:{},moods:{},sleep:{}}; save(); $('#modalBg').style.display='none'; renderAll(); } };
+$('#resetBtn').onclick=()=>{ if(confirm('This will permanently erase all habits, tasks, mood, sleep and Winter Arc data on this device. Continue?')){ db={habits:[],logs:{},todos:{},moods:{},sleep:{},winterArc:{}}; save(); $('#modalBg').style.display='none'; renderAll(); } };
 $('#exportBtn').onclick=()=>{
   const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ledger-export.json'; a.click();
