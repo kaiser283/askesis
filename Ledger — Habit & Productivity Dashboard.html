@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0c">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<title>Ledger — Personal Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0b0c; --panel:#131315; --panel2:#18181b; --border:#26262a; --border-soft:#1e1e21;
+  --text:#e7e7ea; --text-dim:#96969d; --text-faint:#57575e;
+  --accent:#c9a86a; --accent-dim:#7a6a45; --good:#6fae8f; --bad:#c07070;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:13.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',monospace}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 20px 60px}
+header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+header h1{font-size:16px;font-weight:600;margin:0;letter-spacing:.2px}
+header .sub{color:var(--text-dim);font-size:12px;margin-top:2px}
+.btn{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:6px 11px;border-radius:5px;font-size:12px;cursor:pointer;font-family:inherit;transition:border-color .15s}
+.btn:hover{border-color:#3a3a3f}
+.btn.primary{background:var(--accent-dim);border-color:var(--accent);color:#f4ecd9}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:11px 13px}
+.stat .l{color:var(--text-faint);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em}
+.stat .v{font-family:'IBM Plex Mono',monospace;font-size:19px;margin-top:4px;font-weight:500}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:6px;margin-bottom:12px;overflow:hidden}
+.panel .ph{padding:10px 14px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
+.panel .ph h2{font-size:12.5px;font-weight:600;margin:0;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em}
+.panel .pb{padding:12px 14px}
+.cols2{display:grid;grid-template-columns:1.6fr 1fr;gap:12px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+.habit-table{overflow-x:auto}
+.habit-table table{min-width:560px}
+th{color:var(--text-faint);font-weight:500;text-align:center;padding:5px 4px;font-size:10.5px;text-transform:uppercase;border-bottom:1px solid var(--border-soft)}
+th.hname{text-align:left;padding-left:8px}
+td{text-align:center;padding:6px 4px;border-bottom:1px solid var(--border-soft)}
+td.hname{text-align:left;padding-left:8px;white-space:nowrap}
+td.hname .del{color:var(--text-faint);cursor:pointer;margin-left:6px;font-size:11px}
+.cell{width:24px;height:24px;border-radius:4px;border:1px solid var(--border);background:var(--panel2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:var(--text-faint);font-size:12px;transition:.12s}
+.cell.on{background:var(--accent-dim);border-color:var(--accent);color:#f4ecd9}
+.cell:hover{border-color:#4a4a50}
+.mut{color:var(--text-faint)}
+.streakcol{font-family:'IBM Plex Mono',monospace;color:var(--text-dim);font-size:11.5px}
+.addrow{display:flex;gap:6px;margin-top:10px}
+input[type=text],input[type=number]{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:5px;font-size:12.5px;font-family:inherit;flex:1}
+input:focus{outline:1px solid var(--accent-dim)}
+.todo-item{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border-soft)}
+.todo-item:last-child{border-bottom:none}
+.chk{width:15px;height:15px;border-radius:3px;border:1px solid var(--border);cursor:pointer;flex:0 0 auto}
+.chk.on{background:var(--good);border-color:var(--good)}
+.tdone{text-decoration:line-through;color:var(--text-faint)}
+.todo-item .tx{flex:1;cursor:default;font-size:12.5px}
+.todo-item .del{color:var(--text-faint);cursor:pointer;font-size:12px}
+.moodrow,.sleeprow{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.mood-btn{width:32px;height:32px;border-radius:5px;background:var(--panel2);border:1px solid var(--border);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
+.mood-btn.sel{border-color:var(--accent);background:var(--accent-dim)}
+.quote{font-size:13.5px;font-style:italic;color:var(--text)}
+.quote .attr{display:block;margin-top:6px;font-style:normal;color:var(--text-faint);font-size:11px}
+.toprow{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border-soft);font-size:12.5px}
+.toprow:last-child{border-bottom:none}
+.toprow .name{color:var(--text)}
+.toprow .meta{color:var(--text-faint);font-family:'IBM Plex Mono',monospace;font-size:11.5px}
+.empty{color:var(--text-faint);font-size:12.5px;padding:6px 0}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .dow{color:var(--text-faint);font-size:10px;text-align:center;text-transform:uppercase;padding-bottom:3px}
+.cal .day{aspect-ratio:1;border:1px solid var(--border-soft);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:var(--text-dim);position:relative}
+.cal .day.today{border-color:var(--accent)}
+.cal .day .dot{width:5px;height:5px;border-radius:50%;background:var(--good);position:absolute;bottom:4px}
+.cal .day.empty{border:none}
+.chart-wrap{overflow-x:auto}
+.section-label{color:var(--text-faint);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin:22px 0 8px;padding-top:4px;border-top:1px solid var(--border-soft)}
+.section-label:first-child{margin-top:0;border-top:none;padding-top:0}
+.chart-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chart-foot{display:flex;justify-content:space-between;margin-top:4px;font-size:10.5px;color:var(--text-faint)}
+@media(max-width:640px){.chart-grid-2{grid-template-columns:1fr}}
+.celebrate{background:linear-gradient(90deg,var(--panel),var(--panel2));border:1px solid var(--accent);border-radius:6px;padding:11px 14px;margin-bottom:12px;font-size:13px;color:#f4ecd9}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:18px;width:min(340px,90vw)}
+.modal h3{margin:0 0 10px;font-size:13px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em}
+.modal .row{display:flex;gap:8px;margin-top:8px}
+@media(max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}.cols2{grid-template-columns:1fr}}
+.warc-bar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;margin:12px 0}
+.warc-bar-fill{height:100%;background:var(--accent);transition:width .3s}
+.ms-chip{display:inline-block;background:var(--panel2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:10.5px;color:var(--text-faint);margin:0 6px 6px 0}
+.ms-chip.reached{background:var(--accent-dim);border-color:var(--accent);color:#f4ecd9}
+.warc-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+@media(max-width:640px){.warc-grid{grid-template-columns:repeat(7,1fr)}}
+.warc-cell{aspect-ratio:1;border:1px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:var(--text-faint);cursor:pointer;background:var(--panel2)}
+.warc-cell.today{border-color:var(--accent)}
+.warc-cell.done{background:var(--accent-dim);border-color:var(--accent);color:#f4ecd9}
+.warc-cell.missed{background:#2a1c1c;border-color:var(--bad);color:var(--bad)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><h1 id="greet">Ledger</h1><div class="sub" id="dateline"></div></div>
+    <div style="display:flex;gap:8px"><button class="btn" id="warcNavBtn">❄ Winter Arc</button><button class="btn" id="settingsBtn">Settings</button></div>
+  </header>
+
+  <div id="celebrateSlot"></div>
+
+  <div class="grid" id="statGrid"></div>
+
+  <div class="cols2">
+    <div>
+      <div class="panel">
+        <div class="ph"><h2>Habits — This Week</h2></div>
+        <div class="pb">
+          <div class="habit-table"><table id="habitTable"></table></div>
+          <div class="addrow"><input type="text" id="newHabit" placeholder="New habit name…" maxlength="30"><button class="btn primary" id="addHabitBtn">Add</button></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><h2>Calendar</h2><span class="mono mut" id="calLabel"></span></div>
+        <div class="pb"><div class="cal" id="cal"></div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="ph"><h2>To‑Do — Today</h2><span class="mono mut" id="todoCount"></span></div>
+        <div class="pb">
+          <div id="todoList"></div>
+          <div class="addrow"><input type="text" id="newTodo" placeholder="Add a task…"><button class="btn primary" id="addTodoBtn">Add</button></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><h2>Mood</h2></div>
+        <div class="pb"><div class="moodrow" id="moodRow"></div></div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><h2>Sleep</h2></div>
+        <div class="pb"><div class="sleeprow">
+          <input type="number" id="sleepInput" step="0.5" min="0" max="16" placeholder="hrs" style="max-width:80px">
+          <button class="btn" id="sleepSave">Save</button>
+          <span class="mut mono" id="sleepLast"></span>
+        </div></div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><h2>Top Habits</h2></div>
+        <div class="pb" id="topHabits"></div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><h2>Quote of the Day</h2></div>
+        <div class="pb"><div class="quote" id="quoteBox"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><h2>Analytics</h2></div>
+    <div class="pb">
+      <div class="section-label">Habits</div>
+      <div class="chart-grid-2">
+        <div><div class="mut" style="font-size:11.5px;margin-bottom:5px">Weekly Habit Progress</div><div class="chart-wrap" id="chartHabitWeek"></div></div>
+        <div><div class="mut" style="font-size:11.5px;margin-bottom:5px">Monthly Habit Progress</div><div class="chart-wrap" id="chartHabitMonth"></div></div>
+      </div>
+      <div style="margin-top:12px"><div class="mut" style="font-size:11.5px;margin-bottom:5px">Yearly Habit Progress</div><div class="chart-wrap" id="chartHabitYear"></div></div>
+
+      <div class="section-label">To‑Do</div>
+      <div class="chart-grid-2">
+        <div><div class="mut" style="font-size:11.5px;margin-bottom:5px">Weekly To‑Do Progress</div><div class="chart-wrap" id="chartTodoWeek"></div></div>
+        <div><div class="mut" style="font-size:11.5px;margin-bottom:5px">Monthly To‑Do Progress</div><div class="chart-wrap" id="chartTodoMonth"></div></div>
+      </div>
+      <div style="margin-top:12px"><div class="mut" style="font-size:11.5px;margin-bottom:5px">Yearly To‑Do Progress</div><div class="chart-wrap" id="chartTodoYear"></div></div>
+
+      <div class="section-label">Sleep</div>
+      <div class="chart-grid-2">
+        <div><div class="mut" style="font-size:11.5px;margin-bottom:5px">Weekly Sleep</div><div class="chart-wrap" id="chartSleepWeek"></div></div>
+        <div><div class="mut" style="font-size:11.5px;margin-bottom:5px">Monthly Sleep</div><div class="chart-wrap" id="chartSleepMonth"></div></div>
+      </div>
+      <div style="margin-top:12px"><div class="mut" style="font-size:11.5px;margin-bottom:5px">Yearly Sleep</div><div class="chart-wrap" id="chartSleepYear"></div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="winterArc">
+    <div class="ph"><h2>❄ Winter Arc — Oct 1 – Dec 29, 2026</h2><span class="mono mut" id="warcDay"></span></div>
+    <div class="pb">
+      <div class="mut" id="warcDate" style="margin-bottom:10px;font-size:12px"></div>
+      <div id="warcComplete"></div>
+      <div class="grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat"><div class="l">Completion</div><div class="v mono" id="warcPct"></div></div>
+        <div class="stat"><div class="l">Days Done</div><div class="v mono" id="warcCount"></div></div>
+        <div class="stat"><div class="l">Current Streak</div><div class="v mono" id="warcCur"></div></div>
+        <div class="stat"><div class="l">Longest Streak</div><div class="v mono" id="warcBest"></div></div>
+      </div>
+      <div class="warc-bar"><div class="warc-bar-fill" id="warcBarFill" style="width:0%"></div></div>
+      <div id="warcMilestones" style="margin-bottom:8px"></div>
+      <div id="warcGrid"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3>Settings</h3>
+    <p class="mut" style="font-size:12px">Habits are capped at 15. Reset clears all local data on this device.</p>
+    <div class="row"><button class="btn" id="exportBtn" style="flex:1">Export data (.json)</button></div>
+    <div class="row"><button class="btn" id="resetBtn" style="flex:1;border-color:var(--bad);color:var(--bad)">Reset all data</button><button class="btn" id="closeModal" style="flex:1">Close</button></div>
+  </div>
+</div>
+
+<script>
+const KEY='ledger_v1';
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,'0');
+const dstr=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today=new Date(); const TODAY=dstr(today);
+let db=JSON.parse(localStorage.getItem(KEY)||'null')||{habits:[],logs:{},todos:{},moods:{},sleep:{}};
+db.winterArc = db.winterArc || {};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}}
+
+function weekDates(offset=0){
+  const d=new Date(today); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day+offset*7);
+  return Array.from({length:7},(_,i)=>{const x=new Date(d);x.setDate(d.getDate()+i);return x});
+}
+const WEEK=weekDates(0);
+const DOW=['MON','TUE','WED','THU','FRI','SAT','SUN'];
+
+function habitDone(hid,ds){return !!(db.logs[ds]&&db.logs[ds][hid])}
+function toggleHabit(hid,ds){
+  db.logs[ds]=db.logs[ds]||{};
+  if(db.logs[ds][hid]) delete db.logs[ds][hid]; else db.logs[ds][hid]=true;
+  save(); renderAll();
+}
+function streaks(hid){
+  let cur=0,best=0,run=0,total=0;
+  let d=new Date(today);
+  for(let i=0;i<3650;i++){
+    const ds=dstr(d);
+    if(db.logs[ds]&&db.logs[ds][hid]){ run++; total++; if(i===0||cur===i) cur=run; best=Math.max(best,run);}
+    else { if(i===0) cur=0; run=0; if(dstr(d) < (db.habits.find(h=>h.id===hid)?.createdAt||'0')) break; }
+    d.setDate(d.getDate()-1);
+    if(i>0 && dstr(d) < (db.habits.find(h=>h.id===hid)?.createdAt||TODAY) ) break;
+  }
+  return {cur,best,total};
+}
+function habitPct(hid){
+  const h=db.habits.find(x=>x.id===hid); if(!h) return 0;
+  const start=new Date(h.createdAt); const days=Math.max(1,Math.round((today-start)/86400000)+1);
+  let done=0; let d=new Date(start);
+  for(let i=0;i<days;i++){ if(habitDone(hid,dstr(d))) done++; d.setDate(d.getDate()+1); }
+  return Math.round(done/days*100);
+}
+
+function renderStats(){
+  const habitsToday=db.habits.length? db.habits.filter(h=>habitDone(h.id,TODAY)).length:0;
+  const todosToday=db.todos[TODAY]||[];
+  const bestStreak=db.habits.reduce((m,h)=>Math.max(m,streaks(h.id).cur),0);
+  const mood=db.moods[TODAY];
+  const sleep=db.sleep[TODAY];
+  const stats=[
+    ['Habits Today',`${habitsToday}/${db.habits.length||0}`],
+    ['Tasks Today',`${todosToday.filter(t=>t.done).length}/${todosToday.length}`],
+    ['Best Streak',`${bestStreak}d`],
+    ['Sleep',sleep?`${sleep}h`:'—'],
+  ];
+  $('#statGrid').innerHTML=stats.map(s=>`<div class="stat"><div class="l">${s[0]}</div><div class="v mono">${s[1]}</div></div>`).join('');
+  const allDone=db.habits.length>0 && habitsToday===db.habits.length;
+  $('#celebrateSlot').innerHTML=allDone?`<div class="celebrate">Perfect day — every habit completed.</div>`:'';
+}
+
+function renderHabitTable(){
+  const t=$('#habitTable');
+  if(db.habits.length===0){t.innerHTML=`<tr><td class="empty">No habits yet. Add your first habit below.</td></tr>`;return;}
+  let h=`<tr><th class="hname">Habit</th>`+DOW.map((d,i)=>`<th>${d}${WEEK[i].getDate()===today.getDate()&&WEEK[i].getMonth()===today.getMonth()?'•':''}</th>`).join('')+`<th>Streak</th><th>%</th></tr>`;
+  db.habits.forEach(hb=>{
+    const s=streaks(hb.id);
+    h+=`<tr><td class="hname">${hb.icon||'▪'} ${hb.name}<span class="del" data-del="${hb.id}">✕</span></td>`;
+    WEEK.forEach(d=>{
+      const ds=dstr(d); const on=habitDone(hb.id,ds); const future=d>today;
+      h+=`<td><span class="cell ${on?'on':''}" ${future?'style="opacity:.3;pointer-events:none"':''} data-hid="${hb.id}" data-ds="${ds}">${on?'✓':'·'}</span></td>`;
+    });
+    h+=`<td class="streakcol">${s.cur}/${s.best}</td><td class="streakcol">${habitPct(hb.id)}%</td></tr>`;
+  });
+  t.innerHTML=h;
+}
+
+function renderTodos(){
+  const list=db.todos[TODAY]||[];
+  $('#todoCount').textContent=`${list.filter(t=>t.done).length} / ${list.length}`;
+  $('#todoList').innerHTML=list.length?list.map(t=>`
+    <div class="todo-item"><span class="chk ${t.done?'on':''}" data-tid="${t.id}"></span>
+    <span class="tx ${t.done?'tdone':''}">${t.text}</span>
+    <span class="del" data-tdel="${t.id}">✕</span></div>`).join(''):`<div class="empty">No tasks yet. Add something to your list.</div>`;
+}
+
+const MOODS=[['😄','Great'],['🙂','Good'],['😐','Okay'],['😕','Low'],['😞','Bad']];
+function renderMood(){
+  $('#moodRow').innerHTML=MOODS.map((m,i)=>`<span class="mood-btn ${db.moods[TODAY]===i?'sel':''}" data-mood="${i}" title="${m[1]}">${m[0]}</span>`).join('');
+}
+function renderSleep(){
+  $('#sleepLast').textContent=db.sleep[TODAY]?`Logged: ${db.sleep[TODAY]}h today`:'Not logged today';
+}
+
+const QUOTES=[
+  ["Discipline is choosing between what you want now and what you want most.",""],
+  ["The days are long, but the practice is what remains.",""],
+  ["Small repeated acts outweigh rare grand ones.",""],
+  ["You do not rise to your goals; you fall to your habits.",""],
+  ["Patience is not waiting — it is working while you wait.",""],
+  ["What is done consistently compounds; what is done occasionally fades.",""],
+  ["The obstacle in the path becomes the path.",""],
+  ["Consistency turns intention into identity.",""],
+  ["A day poorly closed is easier to lose than a day poorly started.",""],
+  ["Growth is a series of small, unglamorous choices.",""],
+];
+function renderQuote(){
+  const idx=Math.abs(TODAY.split('-').reduce((a,c)=>a+parseInt(c),0))%QUOTES.length;
+  const q=QUOTES[idx];
+  $('#quoteBox').innerHTML=`“${q[0]}”`;
+}
+
+function renderTop(){
+  if(db.habits.length===0){$('#topHabits').innerHTML='<div class="empty">No habits yet.</div>';return;}
+  const rows=db.habits.map(h=>({name:h.name,pct:habitPct(h.id),cur:streaks(h.id).cur,total:streaks(h.id).total}))
+    .sort((a,b)=>b.pct-a.pct).slice(0,10);
+  $('#topHabits').innerHTML=rows.map(r=>`<div class="toprow"><span class="name">${r.name}</span><span class="meta">${r.pct}% · ${r.cur}d streak · ${r.total} total</span></div>`).join('');
+}
+
+function daysInMonth(y,m){return new Date(y,m+1,0).getDate();}
+const earliestHabitDate = ()=> db.habits.length ? db.habits.reduce((m,h)=>h.createdAt<m?h.createdAt:m, db.habits[0].createdAt) : null;
+
+function habitPctForDate(ds,d){
+  const eh=earliestHabitDate();
+  if(!eh || ds<eh || d>today) return null;
+  return Math.round(db.habits.filter(h=>habitDone(h.id,ds)).length/db.habits.length*100);
+}
+function todoPctForDate(ds,d){
+  if(d>today) return null;
+  const list=db.todos[ds];
+  if(!list||list.length===0) return null;
+  return Math.round(list.filter(t=>t.done).length/list.length*100);
+}
+function sleepForDate(ds,d){
+  if(d>today) return null;
+  return db.sleep[ds]!==undefined?db.sleep[ds]:null;
+}
+function monthAvg(fn,y,m){
+  let sum=0,count=0;
+  for(let day=1;day<=daysInMonth(y,m);day++){
+    const d=new Date(y,m,day); if(d>today) break;
+    const v=fn(dstr(d),d);
+    if(v!==null){sum+=v;count++;}
+  }
+  return count?Math.round((sum/count)*10)/10:null;
+}
+
+function linePath(points,w,h,pad,minY,maxY){
+  const n=points.length; const stepX=n>1?(w-2*pad)/(n-1):0;
+  let d='',dots='',started=false;
+  points.forEach((v,i)=>{
+    const x=pad+i*stepX;
+    if(v===null||v===undefined){started=false;return;}
+    const y=h-pad-((v-minY)/(maxY-minY||1))*(h-2*pad);
+    d+=(started?'L':'M')+x.toFixed(1)+','+y.toFixed(1)+' ';
+    dots+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="#c9a86a"/>`;
+    started=true;
+  });
+  return {d,dots};
+}
+function renderLineChart(id,points,opts={}){
+  const el=$('#'+id);
+  const hasData=points.some(v=>v!==null&&v!==undefined);
+  if(!hasData){ el.innerHTML=`<div class="empty">${opts.emptyText||'No data yet.'}</div>`; return; }
+  const w=380,h=100,pad=14;
+  const real=points.filter(v=>v!==null&&v!==undefined);
+  const maxY=opts.maxY??Math.max(...real,1);
+  const minY=opts.minY??0;
+  const {d,dots}=linePath(points,w,h,pad,minY,maxY);
+  const gl=[0,.5,1].map(f=>{const y=h-pad-f*(h-2*pad);return `<line x1="${pad}" x2="${w-pad}" y1="${y}" y2="${y}" stroke="#1e1e21" stroke-width="1"/>`}).join('');
+  el.innerHTML=`<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${gl}<path d="${d}" fill="none" stroke="#c9a86a" stroke-width="1.5"/>${dots}</svg>`
+    +(opts.foot?`<div class="chart-foot"><span>${opts.foot[0]}</span><span>${opts.foot[1]}</span></div>`:'');
+}
+
+const MONTH_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function renderAnalytics(){
+  const y=today.getFullYear(), m=today.getMonth();
+  const dim=daysInMonth(y,m);
+  const monthDates=Array.from({length:dim},(_,i)=>new Date(y,m,i+1));
+  const monthDS=monthDates.map(dstr);
+  const yearMonths=Array.from({length:12},(_,i)=>i);
+
+  // Habits
+  renderLineChart('chartHabitWeek', WEEK.map(d=>habitPctForDate(dstr(d),d)), {emptyText:'No habits yet — add one to see weekly progress.', foot:['Mon','Sun']});
+  renderLineChart('chartHabitMonth', monthDates.map(d=>habitPctForDate(dstr(d),d)), {emptyText:'Not enough habit data this month yet.', foot:['1',String(dim)]});
+  renderLineChart('chartHabitYear', yearMonths.map(mo=>monthAvg(habitPctForDate,y,mo)), {emptyText:'Not enough habit data this year yet.', foot:[MONTH_NAMES[0],MONTH_NAMES[11]]});
+
+  // To-Do
+  renderLineChart('chartTodoWeek', WEEK.map(d=>todoPctForDate(dstr(d),d)), {emptyText:'No tasks logged this week yet.', foot:['Mon','Sun']});
+  renderLineChart('chartTodoMonth', monthDates.map(d=>todoPctForDate(dstr(d),d)), {emptyText:'No tasks logged this month yet.', foot:['1',String(dim)]});
+  renderLineChart('chartTodoYear', yearMonths.map(mo=>monthAvg(todoPctForDate,y,mo)), {emptyText:'No tasks logged this year yet.', foot:[MONTH_NAMES[0],MONTH_NAMES[11]]});
+
+  // Sleep
+  const sleepMax=Math.max(10, ...Object.values(db.sleep), 1);
+  renderLineChart('chartSleepWeek', WEEK.map(d=>sleepForDate(dstr(d),d)), {emptyText:'No sleep data yet — log your sleep to see trends.', minY:0, maxY:sleepMax, foot:['Mon','Sun']});
+  renderLineChart('chartSleepMonth', monthDates.map(d=>sleepForDate(dstr(d),d)), {emptyText:'No sleep data logged this month yet.', minY:0, maxY:sleepMax, foot:['1',String(dim)]});
+  renderLineChart('chartSleepYear', yearMonths.map(mo=>monthAvg(sleepForDate,y,mo)), {emptyText:'No sleep data logged this year yet.', minY:0, maxY:sleepMax, foot:[MONTH_NAMES[0],MONTH_NAMES[11]]});
+}
+
+const WARC_START=new Date(2026,9,1);
+const WARC_DATES=Array.from({length:90},(_,i)=>{const d=new Date(WARC_START);d.setDate(WARC_START.getDate()+i);return d;});
+const WARC_END=WARC_DATES[89];
+const WARC_MILESTONES=[1,30,45,60,75,90];
+function toggleWarc(ds){
+  const cur=db.winterArc[ds];
+  if(cur==='done') db.winterArc[ds]='missed';
+  else if(cur==='missed') delete db.winterArc[ds];
+  else db.winterArc[ds]='done';
+  save(); renderAll();
+}
+function warcStats(){
+  let completed=0,longest=0,run=0;
+  WARC_DATES.forEach(d=>{ const st=db.winterArc[dstr(d)]; if(st==='done'){completed++;run++;longest=Math.max(longest,run);} else run=0; });
+  let refIdx;
+  if(today<WARC_START) refIdx=-1; else if(today>WARC_END) refIdx=89; else refIdx=Math.floor((today-WARC_START)/86400000);
+  let cur=0;
+  for(let i=refIdx;i>=0;i--){ if(db.winterArc[dstr(WARC_DATES[i])]==='done') cur++; else break; }
+  return {completed,longest,cur,refIdx};
+}
+function renderWinterArc(){
+  const s=warcStats();
+  const dayNum=s.refIdx>=0?Math.min(s.refIdx+1,90):0;
+  $('#warcDay').textContent=dayNum?`Day ${dayNum} / 90`:'Starts Oct 1, 2026';
+  $('#warcDate').textContent=today.toLocaleDateString('default',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const pct=Math.round(s.completed/90*100);
+  $('#warcPct').textContent=pct+'%';
+  $('#warcCount').textContent=`${s.completed} / 90`;
+  $('#warcCur').textContent=s.cur+'d';
+  $('#warcBest').textContent=s.longest+'d';
+  $('#warcBarFill').style.width=pct+'%';
+  $('#warcMilestones').innerHTML=WARC_MILESTONES.map(m=>{
+    const reached=db.winterArc[dstr(WARC_DATES[m-1])]==='done';
+    return `<span class="ms-chip ${reached?'reached':''}">Day ${m}${reached?' ✓':''}</span>`;
+  }).join('');
+  const day90done=db.winterArc[dstr(WARC_DATES[89])]==='done';
+  $('#warcComplete').innerHTML=day90done?`<div class="celebrate" style="text-align:center;margin-bottom:12px"><div style="font-size:15px;font-weight:600">❄ Winter Arc Complete</div><div class="mut" style="margin-top:4px">${s.completed}/90 days completed · longest streak ${s.longest}d</div></div>`:'';
+  const groups=[{label:'October 1–31',start:0,end:31},{label:'November 1–30',start:31,end:61},{label:'December 1–29',start:61,end:90}];
+  $('#warcGrid').innerHTML=groups.map(g=>{
+    let cells='';
+    for(let i=g.start;i<g.end;i++){
+      const d=WARC_DATES[i],ds=dstr(d),st=db.winterArc[ds],isToday=ds===TODAY;
+      cells+=`<span class="warc-cell ${st==='done'?'done':''} ${st==='missed'?'missed':''} ${isToday?'today':''}" data-warc="${ds}" title="${d.toLocaleDateString('default',{month:'short',day:'numeric'})}">${d.getDate()}</span>`;
+    }
+    return `<div class="mut" style="font-size:11px;margin:10px 0 5px">${g.label}</div><div class="warc-grid">${cells}</div>`;
+  }).join('');
+}
+
+function renderCal(){
+  const m=today.getMonth(),y=today.getFullYear();
+  $('#calLabel').textContent=today.toLocaleString('default',{month:'long',year:'numeric'});
+  const first=new Date(y,m,1); const startDow=(first.getDay()+6)%7;
+  const daysIn=new Date(y,m+1,0).getDate();
+  let html=['M','T','W','T','F','S','S'].map(d=>`<div class="dow">${d}</div>`).join('');
+  for(let i=0;i<startDow;i++) html+='<div class="day empty"></div>';
+  for(let d=1;d<=daysIn;d++){
+    const ds=dstr(new Date(y,m,d));
+    const hasData=db.habits.some(h=>habitDone(h.id,ds));
+    const isToday=d===today.getDate();
+    html+=`<div class="day ${isToday?'today':''}">${d}${hasData?'<span class="dot"></span>':''}</div>`;
+  }
+  $('#cal').innerHTML=html;
+}
+
+function renderAll(){
+  const hr=today.getHours();
+  $('#greet').textContent = hr<12?'Good morning':hr<18?'Good afternoon':'Good evening';
+  $('#dateline').textContent = today.toLocaleDateString('default',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  renderStats(); renderHabitTable(); renderTodos(); renderMood(); renderSleep(); renderQuote(); renderTop(); renderAnalytics(); renderCal(); renderWinterArc();
+}
+
+// events
+document.body.addEventListener('click',e=>{
+  const cell=e.target.closest('[data-hid]'); if(cell){toggleHabit(cell.dataset.hid,cell.dataset.ds);return;}
+  const del=e.target.closest('[data-del]'); if(del){ if(confirm('Delete this habit and its history?')){ db.habits=db.habits.filter(h=>h.id!==del.dataset.del); Object.values(db.logs).forEach(l=>delete l[del.dataset.del]); save(); renderAll();} return;}
+  const chk=e.target.closest('[data-tid]'); if(chk){ const t=(db.todos[TODAY]||[]).find(x=>x.id===chk.dataset.tid); if(t){t.done=!t.done; save(); renderAll();} return;}
+  const tdel=e.target.closest('[data-tdel]'); if(tdel){ db.todos[TODAY]=(db.todos[TODAY]||[]).filter(x=>x.id!==tdel.dataset.tdel); save(); renderAll(); return;}
+  const mood=e.target.closest('[data-mood]'); if(mood){ db.moods[TODAY]=parseInt(mood.dataset.mood); save(); renderAll(); return;}
+  const warc=e.target.closest('[data-warc]'); if(warc){ toggleWarc(warc.dataset.warc); return;}
+});
+$('#warcNavBtn').onclick=()=>$('#winterArc').scrollIntoView({behavior:'smooth',block:'start'});
+$('#addHabitBtn').onclick=()=>{
+  const inp=$('#newHabit'); const name=inp.value.trim();
+  if(!name) return;
+  if(db.habits.length>=15){alert('Maximum of 15 habits.');return;}
+  db.habits.push({id:'h'+Date.now(),name,icon:'',createdAt:TODAY});
+  inp.value=''; save(); renderAll();
+};
+$('#newHabit').addEventListener('keydown',e=>{if(e.key==='Enter')$('#addHabitBtn').click()});
+$('#addTodoBtn').onclick=()=>{
+  const inp=$('#newTodo'); const text=inp.value.trim(); if(!text)return;
+  db.todos[TODAY]=db.todos[TODAY]||[]; db.todos[TODAY].push({id:'t'+Date.now(),text,done:false});
+  inp.value=''; save(); renderAll();
+};
+$('#newTodo').addEventListener('keydown',e=>{if(e.key==='Enter')$('#addTodoBtn').click()});
+$('#sleepSave').onclick=()=>{
+  const v=parseFloat($('#sleepInput').value); if(isNaN(v))return;
+  db.sleep[TODAY]=v; save(); renderAll();
+};
+$('#settingsBtn').onclick=()=>$('#modalBg').style.display='flex';
+$('#closeModal').onclick=()=>$('#modalBg').style.display='none';
+$('#resetBtn').onclick=()=>{ if(confirm('This will permanently erase all habits, tasks, mood, sleep and Winter Arc data on this device. Continue?')){ db={habits:[],logs:{},todos:{},moods:{},sleep:{},winterArc:{}}; save(); $('#modalBg').style.display='none'; renderAll(); } };
+$('#exportBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ledger-export.json'; a.click();
+};
+
+renderAll();
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+}
+</script>
+</body>
+</html>
